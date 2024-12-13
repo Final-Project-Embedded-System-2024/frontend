@@ -181,84 +181,92 @@ class LDRMonitorScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Radial Gauge
-            Obx(() => SfRadialGauge(
-                  enableLoadingAnimation: true,
-                  axes: <RadialAxis>[
-                    RadialAxis(
-                      minimum: 0,
-                      maximum: 1001,
-                      startAngle: 180,
-                      endAngle: 360,
-                      showLabels: true,
-                      axisLineStyle: const AxisLineStyle(
-                        thickness: 20, // Reduce axis line thickness
-                        color: Colors.transparent, // Make axis line invisible
-                      ),
-                      showAxisLine:
-                          false, // Remove the axis line to reduce extra space
-                      canScaleToFit: true, // Helps in fitting the gauge
-                      radiusFactor: 1.0, // Use full available space
-                      ranges: <GaugeRange>[
-                        GaugeRange(
-                          startValue: 0,
-                          endValue: 200,
-                          color: Colors.brown,
-                          startWidth: 20,
-                          endWidth: 20,
-                        ),
-                        GaugeRange(
-                          startValue: 200,
-                          endValue: 400,
-                          color: Colors.brown[300],
-                          startWidth: 20,
-                          endWidth: 20,
-                        ),
-                        GaugeRange(
-                          startValue: 400,
-                          endValue: 600,
-                          color: Colors.brown[50],
-                          startWidth: 20,
-                          endWidth: 20,
-                        ),
-                        GaugeRange(
-                          startValue: 600,
-                          endValue: 800,
-                          color: Colors.blue[300],
-                          startWidth: 20,
-                          endWidth: 20,
-                        ),
-                        GaugeRange(
-                          startValue: 800,
-                          endValue: 1000,
-                          color: Colors.blue,
-                          startWidth: 20,
-                          endWidth: 20,
-                        ),
-                      ],
-                      pointers: <GaugePointer>[
-                        NeedlePointer(
-                          value:
-                              double.tryParse(controller.ldrValue.value) ?? 0,
-                          enableAnimation: true,
-                          needleLength: 0.7, // Adjust needle length
-                          needleColor: Colors.black,
-                        )
-                      ],
-                      annotations: <GaugeAnnotation>[
-                        GaugeAnnotation(
-                          widget: Text(
-                            controller.ldrValue.value,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+            Obx(() => ClipRect(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    heightFactor: 0.8,
+                    child: SfRadialGauge(
+                      enableLoadingAnimation: true,
+                      axes: <RadialAxis>[
+                        RadialAxis(
+                          minimum: 0,
+                          maximum: 1001,
+                          startAngle: 180,
+                          endAngle: 360,
+                          showLabels: true,
+                          axisLineStyle: const AxisLineStyle(
+                            thickness: 20, // Reduce axis line thickness
+                            color:
+                                Colors.transparent, // Make axis line invisible
                           ),
-                          angle: 90,
-                          positionFactor: 0.3,
+                          showAxisLine:
+                              false, // Remove the axis line to reduce extra space
+                          canScaleToFit: true, // Helps in fitting the gauge
+                          radiusFactor: 1.0, // Use full available space
+                          ranges: <GaugeRange>[
+                            GaugeRange(
+                              startValue: 0,
+                              endValue: 200,
+                              color: Colors.brown,
+                              startWidth: 20,
+                              endWidth: 20,
+                            ),
+                            GaugeRange(
+                              startValue: 200,
+                              endValue: 400,
+                              color: Colors.brown[300],
+                              startWidth: 20,
+                              endWidth: 20,
+                            ),
+                            GaugeRange(
+                              startValue: 400,
+                              endValue: 600,
+                              color: Colors.brown[50],
+                              startWidth: 20,
+                              endWidth: 20,
+                            ),
+                            GaugeRange(
+                              startValue: 600,
+                              endValue: 800,
+                              color: Colors.blue[300],
+                              startWidth: 20,
+                              endWidth: 20,
+                            ),
+                            GaugeRange(
+                              startValue: 800,
+                              endValue: 1000,
+                              color: Colors.blue,
+                              startWidth: 20,
+                              endWidth: 20,
+                            ),
+                          ],
+                          pointers: <GaugePointer>[
+                            NeedlePointer(
+                              value:
+                                  double.tryParse(controller.ldrValue.value) ??
+                                      0,
+                              enableAnimation: true,
+                              needleLength: 0.7, // Adjust needle length
+                              needleColor: Colors.black,
+                            )
+                          ],
+                          annotations: <GaugeAnnotation>[
+                            GaugeAnnotation(
+                              widget: Text(
+                                controller.ldrValue.value,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              angle: 90,
+                              positionFactor: 0.3,
+                            )
+                          ],
                         )
                       ],
-                    )
-                  ],
+                    ),
+                  ),
                 )),
 
             const SizedBox(height: 20),
