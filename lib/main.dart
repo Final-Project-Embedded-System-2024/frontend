@@ -166,9 +166,11 @@ class LDRMonitorScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('LDR Monitor and LED Control',
+        title: Text('Water Turbidty Monitoring System',
             style: GoogleFonts.poppins(
-                color: Colors.white, fontWeight: FontWeight.bold)),
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blue,
       ),
       body: Padding(
@@ -199,21 +201,21 @@ class LDRMonitorScreen extends StatelessWidget {
                         GaugeRange(
                           startValue: 0,
                           endValue: 333,
-                          color: Colors.red,
+                          color: Colors.brown,
                           startWidth: 20,
                           endWidth: 20,
                         ),
                         GaugeRange(
                           startValue: 333,
                           endValue: 666,
-                          color: Colors.orange,
+                          color: Colors.brown[300],
                           startWidth: 20,
                           endWidth: 20,
                         ),
                         GaugeRange(
                           startValue: 666,
                           endValue: 1000,
-                          color: Colors.green,
+                          color: Colors.brown[50],
                           startWidth: 20,
                           endWidth: 20,
                         ),
@@ -251,13 +253,26 @@ class LDRMonitorScreen extends StatelessWidget {
                   minimum: 0,
                   maximum: 1000,
                   orientation: LinearGaugeOrientation.horizontal,
+                  axisLabelStyle: const TextStyle(color: Colors.black),
                   ranges: <LinearGaugeRange>[
+                    const LinearGaugeRange(
+                        midWidth: 20,
+                        endWidth: 20,
+                        startValue: 0,
+                        endValue: 333,
+                        color: Colors.brown),
                     LinearGaugeRange(
-                        startValue: 0, endValue: 333, color: Colors.red),
+                        midWidth: 20,
+                        endWidth: 20,
+                        startValue: 333,
+                        endValue: 666,
+                        color: Colors.brown[300]),
                     LinearGaugeRange(
-                        startValue: 333, endValue: 666, color: Colors.orange),
-                    LinearGaugeRange(
-                        startValue: 666, endValue: 1000, color: Colors.green),
+                        midWidth: 20,
+                        endWidth: 20,
+                        startValue: 666,
+                        endValue: 1000,
+                        color: Colors.brown[50]),
                   ],
                   markerPointers: [
                     LinearShapePointer(
@@ -313,12 +328,15 @@ class LDRMonitorScreen extends StatelessWidget {
                             controller.led1State.value ? Colors.green : null,
                       ),
                       child: Text(
+                        textAlign: TextAlign.center,
                         controller.led1State.value
-                            ? 'LED 1 ON'
-                            : 'Turn ON LED 1',
+                            ? 'Drain Pump ON'
+                            : 'Turn ON Drain Pump',
                         style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 16,
+                            color: !controller.led1State.value
+                                ? Colors.grey
+                                : Colors.white,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -334,11 +352,14 @@ class LDRMonitorScreen extends StatelessWidget {
                             !controller.led1State.value ? Colors.red : null,
                       ),
                       child: Text(
+                        textAlign: TextAlign.center,
                         !controller.led1State.value
-                            ? 'LED 1 OFF'
-                            : 'Turn OFF LED 1',
+                            ? 'Drain Pump OFF'
+                            : 'Turn OFF Drain Pump',
                         style: GoogleFonts.poppins(
-                            color: Colors.grey,
+                            color: !controller.led1State.value
+                                ? Colors.white
+                                : Colors.grey,
                             fontSize: 16,
                             fontWeight: FontWeight.bold),
                       ),
@@ -355,11 +376,11 @@ class LDRMonitorScreen extends StatelessWidget {
                             controller.led2State.value ? Colors.green : null,
                       ),
                       child: Text(
-                        controller.led2State.value
-                            ? 'LED 2 ON'
-                            : 'Turn ON LED 2',
+                        controller.led2State.value ? 'Pump ON' : 'Turn ON PUMP',
                         style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: !controller.led2State.value
+                                ? Colors.grey
+                                : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold),
                       ),
@@ -377,10 +398,12 @@ class LDRMonitorScreen extends StatelessWidget {
                       ),
                       child: Text(
                         !controller.led2State.value
-                            ? 'LED 2 OFF'
-                            : 'Turn OFF LED 2',
+                            ? 'Pump OFF'
+                            : 'Turn OFF PUMP',
                         style: GoogleFonts.poppins(
-                            color: Colors.grey,
+                            color: !controller.led2State.value
+                                ? Colors.white
+                                : Colors.grey,
                             fontSize: 16,
                             fontWeight: FontWeight.bold),
                       ),
