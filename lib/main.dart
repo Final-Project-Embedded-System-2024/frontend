@@ -16,7 +16,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'LDR Monitor and LED Control',
+      debugShowCheckedModeBanner: false,
+      title: 'Water Turbidity Monitoring System',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const LDRMonitorScreen(),
     );
@@ -189,7 +190,7 @@ class LDRMonitorScreen extends StatelessWidget {
                       startAngle: 180,
                       endAngle: 360,
                       showLabels: true,
-                      axisLineStyle: AxisLineStyle(
+                      axisLineStyle: const AxisLineStyle(
                         thickness: 20, // Reduce axis line thickness
                         color: Colors.transparent, // Make axis line invisible
                       ),
@@ -200,22 +201,36 @@ class LDRMonitorScreen extends StatelessWidget {
                       ranges: <GaugeRange>[
                         GaugeRange(
                           startValue: 0,
-                          endValue: 333,
+                          endValue: 200,
                           color: Colors.brown,
                           startWidth: 20,
                           endWidth: 20,
                         ),
                         GaugeRange(
-                          startValue: 333,
-                          endValue: 666,
+                          startValue: 200,
+                          endValue: 400,
                           color: Colors.brown[300],
                           startWidth: 20,
                           endWidth: 20,
                         ),
                         GaugeRange(
-                          startValue: 666,
-                          endValue: 1000,
+                          startValue: 400,
+                          endValue: 600,
                           color: Colors.brown[50],
+                          startWidth: 20,
+                          endWidth: 20,
+                        ),
+                        GaugeRange(
+                          startValue: 600,
+                          endValue: 800,
+                          color: Colors.blue[300],
+                          startWidth: 20,
+                          endWidth: 20,
+                        ),
+                        GaugeRange(
+                          startValue: 800,
+                          endValue: 1000,
+                          color: Colors.blue,
                           startWidth: 20,
                           endWidth: 20,
                         ),
@@ -259,20 +274,32 @@ class LDRMonitorScreen extends StatelessWidget {
                         midWidth: 20,
                         endWidth: 20,
                         startValue: 0,
-                        endValue: 333,
+                        endValue: 200,
                         color: Colors.brown),
                     LinearGaugeRange(
                         midWidth: 20,
                         endWidth: 20,
-                        startValue: 333,
-                        endValue: 666,
+                        startValue: 200,
+                        endValue: 400,
                         color: Colors.brown[300]),
                     LinearGaugeRange(
                         midWidth: 20,
                         endWidth: 20,
-                        startValue: 666,
-                        endValue: 1000,
+                        startValue: 400,
+                        endValue: 600,
                         color: Colors.brown[50]),
+                    LinearGaugeRange(
+                        midWidth: 20,
+                        endWidth: 20,
+                        startValue: 600,
+                        endValue: 800,
+                        color: Colors.blue[300]),
+                    const LinearGaugeRange(
+                        midWidth: 20,
+                        endWidth: 20,
+                        startValue: 800,
+                        endValue: 1000,
+                        color: Colors.blue),
                   ],
                   markerPointers: [
                     LinearShapePointer(
