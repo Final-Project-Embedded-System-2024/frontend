@@ -44,13 +44,11 @@ class TurbidityController extends GetxController {
   var turbidityValue = "0".obs;
   var isConnected = false.obs;
 
-  // Observables to track Drain Pump states and button interaction
-  var drainPump1State = false.obs;
-  var drainPump2State = false.obs;
-  var isDrainPump1Busy = false.obs;
-  var isDrainPump2Busy = false.obs;
+  // Simplified Drain Pump state tracking
+  var drainPumpState = false.obs;
+  var isDrainPumpBusy = false.obs;
 
-  // List to store recent Turbidiy Sensor readings
+  // List to store recent Turbidity Sensor readings
   final RxList<TurbidityReading> recentReadings = <TurbidityReading>[].obs;
 
   @override
@@ -120,45 +118,35 @@ class TurbidityController extends GetxController {
     }
   }
 
-  void toggleDrainPump(String drainPumpType) {
+  void toggleDrainPump(String command) {
     // Prevent spam and ensure connection
     if (!isConnected.value) {
       Get.snackbar('Error', 'Not connected to MQTT broker');
       return;
     }
 
-    // Determine which Drain Pump and its current state
-    var isBusy =
-        drainPumpType.contains('2') ? isDrainPump2Busy : isDrainPump1Busy;
-    var currentState =
-        drainPumpType.contains('2') ? drainPump2State : drainPump1State;
-
     // If already processing a request, ignore
-    if (isBusy.value) {
+    if (isDrainPumpBusy.value) {
       Get.snackbar('Wait', 'Previous command is being processed');
       return;
     }
 
     // Set busy state
-    isBusy.value = true;
+    isDrainPumpBusy.value = true;
 
     // Prepare MQTT message
     final builder = MqttClientPayloadBuilder();
-    builder.addString(drainPumpType);
+    builder.addString(command);
     client.publishMessage(
         topicDrainPump, MqttQos.atLeastOnce, builder.payload!);
 
     // Reset busy state after a delay to prevent rapid consecutive commands
     Timer(const Duration(seconds: 2), () {
-      isBusy.value = false;
+      isDrainPumpBusy.value = false;
     });
 
-    // Toggle state (this would ideally be confirmed by a response from the device)
-    if (drainPumpType.contains('2')) {
-      drainPump2State.value = drainPumpType.contains('on');
-    } else {
-      drainPump1State.value = drainPumpType.contains('on');
-    }
+    // Update state based on the command
+    drainPumpState.value = (command == "on");
   }
 }
 
@@ -192,7 +180,7 @@ class TurbidityMonitorScreen extends StatelessWidget {
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('750 ke atas: Sangat Jernih',
+                      Text('750 ke atas: Jernih',
                           style: GoogleFonts.poppins(
                               color: Colors.blue, fontWeight: FontWeight.bold)),
                       Text('500 - 749: Keruh',
@@ -240,14 +228,12 @@ class TurbidityMonitorScreen extends StatelessWidget {
                           endAngle: 360,
                           showLabels: true,
                           axisLineStyle: const AxisLineStyle(
-                            thickness: 20, // Reduce axis line thickness
-                            color:
-                                Colors.transparent, // Make axis line invisible
+                            thickness: 20,
+                            color: Colors.transparent,
                           ),
-                          showAxisLine:
-                              false, // Remove the axis line to reduce extra space
-                          canScaleToFit: true, // Helps in fitting the gauge
-                          radiusFactor: 1.0, // Use full available space
+                          showAxisLine: false,
+                          canScaleToFit: true,
+                          radiusFactor: 1.0,
                           ranges: <GaugeRange>[
                             GaugeRange(
                               startValue: 0,
@@ -291,7 +277,7 @@ class TurbidityMonitorScreen extends StatelessWidget {
                                       controller.turbidityValue.value) ??
                                   0,
                               enableAnimation: true,
-                              needleLength: 0.7, // Adjust needle length
+                              needleLength: 0.7,
                               needleColor: Colors.black,
                             )
                           ],
@@ -304,9 +290,9 @@ class TurbidityMonitorScreen extends StatelessWidget {
                                 String text;
                                 Color? color;
 
-                                if (value > 750) {
+                                if (value >= 750) {
                                   text =
-                                      '${controller.turbidityValue.value} - Sangat Jernih';
+                                      '${controller.turbidityValue.value} - Jernih';
                                   color = Colors.blue;
                                 } else if (value > 500) {
                                   text =
@@ -418,7 +404,7 @@ class TurbidityMonitorScreen extends StatelessWidget {
                   )),
             ),
 
-            // LED Control Buttons in 2x2 Grid
+            // Drain Pump Control Buttons
             const SizedBox(height: 20),
             Obx(() => GridView.count(
                   shrinkWrap: true,
@@ -427,24 +413,24 @@ class TurbidityMonitorScreen extends StatelessWidget {
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
                   children: [
-                    // LED 1 ON Button
+                    // ON Button
                     ElevatedButton(
-                      onPressed: controller.isDrainPump1Busy.value ||
+                      onPressed: controller.isDrainPumpBusy.value ||
                               !controller.isConnected.value
                           ? null
                           : () => controller.toggleDrainPump("on"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: controller.drainPump1State.value
+                        backgroundColor: controller.drainPumpState.value
                             ? Colors.green
                             : null,
                       ),
                       child: Text(
                         textAlign: TextAlign.center,
-                        controller.drainPump1State.value
+                        controller.drainPumpState.value
                             ? 'Drain Pump ON'
                             : 'Turn ON Drain Pump',
                         style: GoogleFonts.poppins(
-                            color: !controller.drainPump1State.value
+                            color: !controller.drainPumpState.value
                                 ? Colors.grey
                                 : Colors.white,
                             fontSize: 15,
@@ -452,24 +438,24 @@ class TurbidityMonitorScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // LED 1 OFF Button
+                    // OFF Button
                     ElevatedButton(
-                      onPressed: controller.isDrainPump1Busy.value ||
+                      onPressed: controller.isDrainPumpBusy.value ||
                               !controller.isConnected.value
                           ? null
                           : () => controller.toggleDrainPump("off"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: !controller.drainPump1State.value
+                        backgroundColor: !controller.drainPumpState.value
                             ? Colors.red
                             : null,
                       ),
                       child: Text(
                         textAlign: TextAlign.center,
-                        !controller.drainPump1State.value
+                        !controller.drainPumpState.value
                             ? 'Drain Pump OFF'
                             : 'Turn OFF Drain Pump',
                         style: GoogleFonts.poppins(
-                            color: !controller.drainPump1State.value
+                            color: !controller.drainPumpState.value
                                 ? Colors.white
                                 : Colors.grey,
                             fontSize: 16,
