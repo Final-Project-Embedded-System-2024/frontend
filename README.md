@@ -1,3 +1,1 @@
-# smart_water
-
-A new Flutter project.
+# IOT Water Turbidity Monitoring System

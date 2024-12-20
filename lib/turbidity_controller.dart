@@ -5,12 +5,13 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:async';
 import 'package:smart_water/model/turbidty_reading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class TurbidityController extends GetxController {
-  final String broker = 's7ca81ae.ala.asia-southeast1.emqxsl.com';
+  final String broker = dotenv.env['BROKER']!;
   final int port = 8883;
-  final String username = 'eliz';
-  final String password = 'zilepassword';
+  final String username = dotenv.env['USERNAME']!;
+  final String password = dotenv.env['PASSWORD']!;
   final String topicTurbidity = 'emqx/esp8266/turbidity';
   final String topicDrainPump = 'emqx/esp8266/pump';
   final String topicAutomaticDrainPump = 'emqx/esp8266/automatic-drain-pump';
