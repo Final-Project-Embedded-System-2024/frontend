@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:get/get.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -32,6 +31,9 @@ class TurbidityController extends GetxController {
   var automaticDrainPumpEnabled = false.obs;
   var automaticDrainPumpThreshold = ''.obs;
 
+  // Add a debounce mechanism
+  Timer? _savePreferencesTimer;
+
   // List to store recent Turbidity Sensor readings
   final RxList<TurbidityReading> recentReadings = <TurbidityReading>[].obs;
 
@@ -60,14 +62,9 @@ class TurbidityController extends GetxController {
     automaticDrainPumpThreshold.value =
         _prefs?.getString('automaticDrainPumpThreshold') ?? '';
 
-    // Load persistent readings
-    _loadReadings();
     super.onInit();
     connectToMQTT();
   }
-
-  // Add a debounce mechanism
-  Timer? _savePreferencesTimer;
 
   void _debounceSavePreferences() {
     _savePreferencesTimer?.cancel();
@@ -102,32 +99,17 @@ class TurbidityController extends GetxController {
     // Append the new reading
     allReadings.add(newReading);
 
-    // Optional: Prune readings older than 30 days
+    // Optional: Prune readings older than 3 days
     final now = DateTime.now();
     allReadings = allReadings
         .where((reading) =>
-            now.difference(reading.timestamp).inDays < 30) // Keep last 30 days
+            now.difference(reading.timestamp).inDays < 3) // Keep last 3 days
         .toList();
 
     // Save the updated list to shared preferences
     final allReadingsJson =
         json.encode(allReadings.map((reading) => reading.toJson()).toList());
     _prefs?.setString('turbidityReadings', allReadingsJson);
-  }
-
-  void _loadReadings() {
-    final readingsJson = _prefs?.getString('turbidityReadings');
-    if (readingsJson != null) {
-      final List<dynamic> decodedReadings = json.decode(readingsJson);
-      final now = DateTime.now();
-
-      // Keep recent readings (last 12 hours) for display
-      recentReadings.value = decodedReadings
-          .map((reading) => TurbidityReading.fromJson(reading))
-          .where((reading) => now.difference(reading.timestamp).inHours < 12)
-          .take(50) // Limit to 10 for display
-          .toList();
-    }
   }
 
   Future<void> connectToMQTT() async {
@@ -219,11 +201,35 @@ class TurbidityController extends GetxController {
       return [];
     }
 
-    // Decode and return all readings
+    // Decode all readings
     final List<dynamic> decodedReadings = json.decode(readingsJson);
-    return decodedReadings
+    final List<TurbidityReading> allReadings = decodedReadings
         .map((reading) => TurbidityReading.fromJson(reading))
         .toList();
+
+    // Get the current time
+    final now = DateTime.now();
+
+    // Filter readings to get the latest 12 hours data
+    final List<TurbidityReading> last12HoursReadings = allReadings
+        .where((reading) => now.difference(reading.timestamp).inHours < 12)
+        .toList();
+
+    // Filter readings to get 6 data points per hour
+    final Map<int, List<TurbidityReading>> hourlyReadings = {};
+    for (var reading in last12HoursReadings) {
+      final hour = reading.timestamp.hour;
+      if (!hourlyReadings.containsKey(hour)) {
+        hourlyReadings[hour] = [];
+      }
+      // Add reading if less than 6 readings for this hour
+      if (hourlyReadings[hour]!.length < 10) {
+        hourlyReadings[hour]!.add(reading);
+      }
+    }
+
+    // Flatten the map to a list
+    return hourlyReadings.values.expand((readings) => readings).toList();
   }
 
   void toggleDrainPump(String command) {
@@ -233,13 +239,11 @@ class TurbidityController extends GetxController {
       return;
     }
 
-    // Prevent toggle if automatic drain pump is enabled and command is "on" or "off"
-    if (automaticDrainPumpEnabled.value &&
-        (command == "on" || command == "off")) {
-      Get.snackbar('Error', 'Automatic Drain Pump is enabled');
-      return;
+    if (command == "on" || command == "off") {
+      // setAutomaticDrainPump(false);
+      automaticDrainPumpThreshold.value = '0';
+      automaticDrainPumpEnabled.value = false;
     }
-
     // Determine which pump is being controlled
     bool isSupplyPump = command.contains("supply");
     var isPumpBusy = isSupplyPump ? isSupplyPumpBusy : isDrainPumpBusy;
@@ -249,11 +253,6 @@ class TurbidityController extends GetxController {
     if (isPumpBusy.value) {
       Get.snackbar('Wait', 'Previous command is being processed');
       return;
-    }
-
-    // If turning off any pump, also disable automatic drain pump
-    if (command.contains("off")) {
-      setAutomaticDrainPump(false);
     }
 
     // Set busy state
@@ -284,11 +283,6 @@ class TurbidityController extends GetxController {
       return;
     }
 
-    // Add a check to prevent redundant publishing
-    if (enable == automaticDrainPumpEnabled.value) {
-      return; // Exit if the state is already set
-    }
-
     final builder = MqttClientPayloadBuilder();
     if (enable) {
       if (threshold.isEmpty) {
@@ -298,8 +292,9 @@ class TurbidityController extends GetxController {
       builder.addString('{"mode": "on", "threshold": $threshold}');
       automaticDrainPumpThreshold.value = threshold;
     } else {
-      builder.addString('{"mode": "off"}');
-      automaticDrainPumpThreshold.value = '';
+      threshold = '0';
+      builder.addString('{"mode": "off", "threshold": $threshold}');
+      automaticDrainPumpThreshold.value = '0';
     }
 
     try {
@@ -308,12 +303,8 @@ class TurbidityController extends GetxController {
 
       // Update and save automatic drain pump state
       automaticDrainPumpEnabled.value = enable;
+      drainPumpState.value = false;
       _savePumpState();
-
-      // If disabling automatic drain pump, also turn off drain pump
-      if (!enable) {
-        toggleDrainPump("off");
-      }
     } catch (e) {
       print('Error publishing MQTT message: $e');
       Get.snackbar('Error', 'Failed to send MQTT message');

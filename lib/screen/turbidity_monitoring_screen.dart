@@ -66,6 +66,50 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                   color: Colors.white,
                   fontWeight: FontWeight.bold)),
           backgroundColor: Colors.blue,
+          actions: [
+            IconButton(
+                icon: const Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Get.defaultDialog(
+                    titlePadding: const EdgeInsets.all(25),
+                    title: 'Water Turbidity Monitoring Information',
+                    titleStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold, fontSize: 20),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Semakin tinggi nilai semakin jernih.',
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Text('700 ke atas: Jernih',
+                            style: GoogleFonts.poppins(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold)),
+                        Text('500 - 699: Keruh',
+                            style: GoogleFonts.poppins(
+                                color: Colors.brown[200],
+                                fontWeight: FontWeight.bold)),
+                        Text('Di Bawah 500: Sangat Kotor',
+                            style: GoogleFonts.poppins(
+                                color: Colors.brown,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    confirm: TextButton(
+                      onPressed: () {
+                        Get.back();
+                      },
+                      child: Text('Tutup',
+                          style:
+                              GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                    ),
+                  );
+                }),
+          ],
         ),
         body: _currentIndex == 0
             ? _buildHomeScreen(controller)
@@ -80,7 +124,7 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
 
     return SingleChildScrollView(
       child: Container(
-        height: 850,
+        height: 800,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -134,13 +178,13 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                               ),
                               GaugeRange(
                                 startValue: 540,
-                                endValue: 720,
+                                endValue: 650,
                                 color: Colors.brown[50],
                                 startWidth: 20,
                                 endWidth: 20,
                               ),
                               GaugeRange(
-                                startValue: 720,
+                                startValue: 651,
                                 endValue: 900,
                                 color: Colors.blue,
                                 startWidth: 20,
@@ -166,7 +210,7 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                                   String text;
                                   Color? color;
 
-                                  if (value >= 750) {
+                                  if (value >= 700) {
                                     text =
                                         '${controller.turbidityValue.value} - Jernih';
                                     color = Colors.blue;
@@ -230,12 +274,12 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                           midWidth: 20,
                           endWidth: 20,
                           startValue: 540,
-                          endValue: 720,
+                          endValue: 650,
                           color: Colors.brown[50]),
                       const LinearGaugeRange(
                           midWidth: 20,
                           endWidth: 20,
-                          startValue: 720,
+                          startValue: 651,
                           endValue: 900,
                           color: Colors.blue),
                     ],
@@ -425,9 +469,9 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
           children: [
             // Live Chart for Last 12 Hours Readings
             Text(
-              'Turbidity Readings (Last 12 Hours)',
+              'Riwayat Bacaan Sensor (12 jam terakhir)',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -440,23 +484,15 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-
-                  final allReadings = snapshot.data!;
-                  final now = DateTime.now();
-
-                  // Filter readings from the last 12 hours
-                  final lastTwelveHours = allReadings
-                      .where((reading) =>
-                          now.difference(reading.timestamp).inHours < 12)
-                      .toList();
-
+                  final lastTwelveHours = snapshot.data!;
                   return SfCartesianChart(
                     primaryXAxis: DateTimeAxis(
-                      intervalType: DateTimeIntervalType.hours,
+                      isVisible: true,
+                      intervalType: DateTimeIntervalType.minutes,
                       dateFormat: DateFormat('HH:mm'),
                     ),
                     primaryYAxis: const NumericAxis(
-                      title: AxisTitle(text: 'Turbidity'),
+                      title: AxisTitle(text: 'Nilai Sensor'),
                     ),
                     series: <LineSeries<TurbidityReading, DateTime>>[
                       LineSeries<TurbidityReading, DateTime>(
@@ -465,9 +501,6 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                         yValueMapper: (reading, _) =>
                             double.tryParse(reading.value) ?? 0,
                         color: Colors.blue,
-                        markerSettings: const MarkerSettings(
-                          isVisible: true,
-                        ),
                       ),
                     ],
                   );
@@ -481,7 +514,7 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
             Text(
               'Automatic Drain Pump Settings',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -556,7 +589,7 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
                 )),
 
             // Add this after the buttons
-            const SizedBox(height: 10),
+            const SizedBox(height: 30),
             Obx(() => Text(
                   controller.automaticDrainPumpEnabled.value
                       ? 'Automatic Drain Pump: Enabled (Threshold: ${controller.automaticDrainPumpThreshold.value})'
