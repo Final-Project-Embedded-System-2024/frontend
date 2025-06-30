@@ -1,0 +1,2 @@
+D:/Kuliah/Semester 3/Pemrograman Perangkat Bergerak/smart_water/android/app/.cxx/Debug/6n3z5zr6/x86/CMakeFiles/edit_cache.dir
+D:/Kuliah/Semester 3/Pemrograman Perangkat Bergerak/smart_water/android/app/.cxx/Debug/6n3z5zr6/x86/CMakeFiles/rebuild_cache.dir

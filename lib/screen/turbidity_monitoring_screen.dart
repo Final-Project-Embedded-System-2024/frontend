@@ -6,6 +6,8 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:smart_water/screen/offline_screen.dart';
+import 'package:smart_water/screen/ai_summary_screen.dart';
+import 'package:smart_water/screen/data_visualization_screen.dart';
 import 'package:smart_water/model/turbidty_reading.dart';
 
 class TurbidityMonitorScreen extends StatefulWidget {
@@ -38,6 +40,7 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
       return Scaffold(
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
+          selectedItemColor: Colors.blue,
           onTap: (index) {
             setState(() {
               _currentIndex = index;
@@ -54,19 +57,41 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
               label: 'Settings',
               backgroundColor: Colors.blue,
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome),
+              label: 'AI Summary',
+              backgroundColor: Colors.blue,
+            ),
           ],
         ),
         appBar: AppBar(
           title: Text(
               _currentIndex == 0
                   ? 'Water Turbidity Monitoring System'
-                  : 'Automatic Drain Pump Settings',
+                  : _currentIndex == 1
+                      ? 'Automatic Drain Pump Settings'
+                      : 'AI Daily Summary',
               style: GoogleFonts.poppins(
                   fontSize: 17,
                   color: Colors.white,
                   fontWeight: FontWeight.bold)),
           backgroundColor: Colors.blue,
           actions: [
+            if (_currentIndex == 0)
+              IconButton(
+                icon: const Icon(
+                  Icons.bar_chart,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataVisualizationScreen(),
+                    ),
+                  );
+                },
+              ),
             IconButton(
                 icon: const Icon(
                   Icons.info_outline,
@@ -113,7 +138,9 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
         ),
         body: _currentIndex == 0
             ? _buildHomeScreen(controller)
-            : _buildSettingsScreen(controller),
+            : _currentIndex == 1
+                ? _buildSettingsScreen(controller)
+                : _buildAiSummaryScreen(),
       );
     });
   }
@@ -607,5 +634,9 @@ class _TurbidityMonitorScreenState extends State<TurbidityMonitorScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildAiSummaryScreen() {
+    return const AiSummaryScreen();
   }
 }

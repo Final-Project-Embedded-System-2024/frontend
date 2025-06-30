@@ -1,15 +1,15 @@
-import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:async';
 import 'package:smart_water/model/turbidty_reading.dart';
+import 'package:smart_water/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class TurbidityController extends GetxController {
   final String broker = dotenv.env['BROKER']!;
-  final int port = 8883;
+  final int port = 1883;
   final String username = dotenv.env['USERNAME']!;
   final String password = dotenv.env['PASSWORD']!;
   final String topicTurbidity = 'emqx/esp8266/turbidity';
@@ -71,7 +71,7 @@ class TurbidityController extends GetxController {
     _savePreferencesTimer?.cancel();
     _savePreferencesTimer = Timer(const Duration(milliseconds: 500), () {
       _savePumpState();
-      // _saveReading();
+      // Data is now saved automatically by the Python API via MQTT
     });
   }
 
@@ -84,45 +84,17 @@ class TurbidityController extends GetxController {
         'automaticDrainPumpThreshold', automaticDrainPumpThreshold.value);
   }
 
-  void _saveReading(TurbidityReading newReading) {
-    // Load existing readings from shared preferences
-    final existingReadingsJson = _prefs?.getString('turbidityReadings');
-    List<TurbidityReading> allReadings = [];
-
-    // Parse existing readings if they exist
-    if (existingReadingsJson != null) {
-      final List<dynamic> existingReadings = json.decode(existingReadingsJson);
-      allReadings = existingReadings
-          .map((reading) => TurbidityReading.fromJson(reading))
-          .toList();
-    }
-
-    // Append the new reading
-    allReadings.add(newReading);
-
-    // Optional: Prune readings older than 3 days
-    final now = DateTime.now();
-    allReadings = allReadings
-        .where((reading) =>
-            now.difference(reading.timestamp).inDays < 3) // Keep last 3 days
-        .toList();
-
-    // Save the updated list to shared preferences
-    final allReadingsJson =
-        json.encode(allReadings.map((reading) => reading.toJson()).toList());
-    _prefs?.setString('turbidityReadings', allReadingsJson);
-  }
-
   Future<void> connectToMQTT() async {
     try {
       // Add more detailed logging
       print('Attempting to connect to broker: $broker on port $port');
 
-      client = MqttServerClient(broker, 'flutter_client');
+      client = MqttServerClient(
+          broker, 'flutter_${DateTime.now().millisecondsSinceEpoch}');
       client.port = port;
-      client.secure = true;
-      client.logging(on: true); // Enable logging for more details
-      client.setProtocolV311();
+      client.secure = false;
+      // client.logging(on: true);
+      // client.setProtocolV311();
       client.keepAlivePeriod = 20;
 
       // More comprehensive error handling
@@ -192,45 +164,23 @@ class TurbidityController extends GetxController {
       recentReadings.removeRange(10, recentReadings.length);
     }
 
-    // Persist readings
-    _saveReading(TurbidityReading(timestamp: DateTime.now(), value: payload));
+    // Data is now automatically saved by the Python API via MQTT
+    // No need to save locally anymore
   }
 
-  Future<List<TurbidityReading>> getAllReadingsFromSharedPreferences() async {
-    final readingsJson = _prefs?.getString('turbidityReadings');
-    if (readingsJson == null) {
+  // Updated method to get readings from API instead of local storage
+  Future<List<TurbidityReading>> getAllReadingsFromApi({int days = 1}) async {
+    try {
+      return await ApiService.getRecentData(days: days);
+    } catch (e) {
+      print('Error fetching data from API: $e');
       return [];
     }
+  }
 
-    // Decode all readings
-    final List<dynamic> decodedReadings = json.decode(readingsJson);
-    final List<TurbidityReading> allReadings = decodedReadings
-        .map((reading) => TurbidityReading.fromJson(reading))
-        .toList();
-
-    // Get the current time
-    final now = DateTime.now();
-
-    // Filter readings to get the latest 12 hours data
-    final List<TurbidityReading> last12HoursReadings = allReadings
-        .where((reading) => now.difference(reading.timestamp).inHours < 12)
-        .toList();
-
-    // Filter readings to get 6 data points per hour
-    final Map<int, List<TurbidityReading>> hourlyReadings = {};
-    for (var reading in last12HoursReadings) {
-      final hour = reading.timestamp.hour;
-      if (!hourlyReadings.containsKey(hour)) {
-        hourlyReadings[hour] = [];
-      }
-      // Add reading if less than 6 readings for this hour
-      if (hourlyReadings[hour]!.length < 10) {
-        hourlyReadings[hour]!.add(reading);
-      }
-    }
-
-    // Flatten the map to a list
-    return hourlyReadings.values.expand((readings) => readings).toList();
+  // Keep the old method name for backward compatibility, but use API
+  Future<List<TurbidityReading>> getAllReadingsFromSharedPreferences() async {
+    return getAllReadingsFromApi(days: 1);
   }
 
   void toggleDrainPump(String command) {
